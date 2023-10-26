@@ -1,0 +1,683 @@
+
+
+<div id="smart1" style="width:450px;border-bottom: none;margin-left: 50px" class="dynamic_div">
+		<input type="hidden" name="trid" id="trid1" >
+           <div class="dynamic_addrtxt" style="float: left">
+              <select name="farmer" id="farmer1" onchange="getShedno(this)" title="Select Farmer" style="width: 205px;" >
+	                <option value="-1">--SELECT--</option>
+	                </select>
+            </div>
+            <div class="dynamic_addrtxt" style="float: left;">
+            <select name="shed" id="shed1" onchange="return checkDuplicatefarmer(this)" title="Select Shed" style="width: 110px;" >
+	                <option value="-1">--SELECT--</option>
+	                </select>
+            </div>
+          	<div class="dynamic_addrtxt" style="float: left;">
+            <div class="addrtxt" ><input class="txt_border" type="text" id="batch1"  style="width: 90px;text-align: right" name="batch" maxlength="10" title="Batch" placeholder="Batch" value="" readonly="readonly"  onkeydown="return LDC_AddRow('smart1',1,event.keyCode,event,this,2);" /></div>
+            </div>
+            </div>
+			
+			
+
+var LDC_Counter=1;
+function LDC_AddRow(divName,currentcount,key,eve,id,length)
+{
+	if(eve!="" && eve.keyCode!=46)
+	{
+		eve = (eve) ? eve : window.event;
+		var keyCodeEntered = (eve.which) ? eve.which : (window.eve.keyCode);
+		if (keyCodeEntered >31 && (keyCodeEntered < 48 || keyCodeEntered > 57)&& keyCodeEntered!=46)
+			return false;
+		if ((keyCodeEntered >= 48) && (keyCodeEntered <= 57) || (keyCodeEntered <= 8))
+		{
+			return true;
+		}       
+		else if((keyCodeEntered>31 && keyCodeEntered<=47)  || (keyCodeEntered>=94 && keyCodeEntered<=96) || (keyCodeEntered>=58 && keyCodeEntered<=126))
+		{
+			if ((id.value) && (id.value.indexOf('.') >= 0))
+
+				return false;
+			else
+				return true;  
+		}
+	}	
+	var x=currentcount; 
+	var batcharray=document.getElementsByName("batch");	
+	if(currentcount>=LDC_Counter)
+	{
+		currentcount=LDC_Counter;
+	}
+	if(key==13 && LDC_Counter==currentcount)
+	{
+		LDC_Counter=x;
+		for(var i=0;i<batcharray.length;i++)
+		{
+			var flag=checkForBlankFieldsLDC(batcharray[i]);
+			if(flag==false)
+			{
+				return false;
+			}
+		}	
+
+		var newdiv = document.createElement('div');
+		newdiv.id='id'+(LDC_Counter+1);
+		newdiv.innerHTML = 
+			'<div class="dynamic_addrtxt" style="float:left">'+ 
+			'<input type="hidden" name="trid" id="trid'+(LDC_Counter+1)+'" />'+
+			'<select name="farmer" id="farmer'+(LDC_Counter+1)+'" title="Farmer" style="width:205px;" onchange="getShedno(this)"><option value="-1">-- SELECT --</option>'+
+			'</select></div>'+
+			'<div class="dynamic_addrtxt" style="float:left"><div class="dynamic_addrtxt" style="float:left"><select name="shed" id="shed'+(LDC_Counter+1)+'" title="Shed" style="width:110px;" onchange="return checkDuplicatefarmer(this)"><option value="-1">-- SELECT --</option>'+
+			'</select></div>'+
+		    '<div class="dynamic_addrtxt" style="float:left"><input name="batch" id="batch'+(LDC_Counter+1)+'" title="Batch" style="width:90px;text-align:right" placeholder="SPACE PER BIRD"  maxlength="10"  onkeydown="return LDC_AddRow(\'smart1\','+(LDC_Counter+1)+',event.keyCode,event,this,2)"></div>';
+
+		document.getElementById(divName).appendChild(newdiv);
+		LDC_Counter++;
+		document.getElementById("farmer"+LDC_Counter).focus(); 
+		getFarmerListLDC('',LDC_Counter);
+	}
+	else if(eve.shiftKey && key==46) 	// 46 Is ASCII Value Of Delete Key
+	{
+		if(x!=1)
+		{
+			document.getElementById("HidTrid").value+=document.getElementById("trid"+x).value+":";
+			LDC_RemoveRow(x);	
+		}
+		else
+		{
+			alert("Please Dont Delete This Row...!");
+			return false;
+		}
+	}	
+}
+function LDC_RemoveRow(counter1)
+{	
+	var d=document.getElementById("smart1");
+	var olddiv=document.getElementById("id"+counter1);
+	d.removeChild(olddiv);
+	LDC_Counter--;
+}
+
+/* ******************************************   Retrieve Whole Data Of LAst DC of Bird Sale   ************************** */
+var hmlspaceperbird;
+batch_Array=new Array();
+function getDetails(id)
+{
+	var key="getLDCDetails";
+	var mainid=id; //document.getElementById('id').value
+	if(mainid.value=="-1")
+		{
+		return false;
+		}
+	if(window.ActiveXObject)
+	{			
+		hmlspaceperbird=new ActiveXObject("Microsoft.XMLHTTP");
+	}
+	else if(window.XMLHttpRequest)			
+	{
+		hmlspaceperbird=new XMLHttpRequest();
+	}
+	var url="../BirdSale_LastDc?key="+key+"&mainid="+mainid;
+	hmlspaceperbird.onreadystatechange=function()
+	{
+		if(hmlspaceperbird.readyState==4)
+		{
+			DailyLDT_Reset();
+			var result=hmlspaceperbird.responseText;
+			var data=result.split(":@");	
+			var farmerid=data[0].split("!@");
+			var shedno=data[1].split("!@");
+			var batch=data[2].split("!@");
+			var transId=data[3].split("!@");
+			var farmerlist=data[4];
+			var shedlist=data[5].split("!@");
+			document.getElementById("branch_id1").value=data[6];
+			document.getElementById("date").value=data[7];
+			document.getElementById('mainID').value=mainid;
+			document.getElementById("hsearch_ldcid").value=mainid;
+			document.getElementById("search_ldcid").value=mainid+"("+data[7]+")";
+			batch_Array={"label":mainid+"("+data[7]+")","values":mainid};
+			for(var i=1;i<=farmerid.length;i++)
+			{
+				document.getElementById("farmer"+Number(i)).innerHTML=farmerlist.trim();
+				document.getElementById("farmer"+Number(i)).value=farmerid[i-1].trim();
+				document.getElementById("shed"+Number(i)).innerHTML=shedlist[i-1].trim();
+				document.getElementById("shed"+Number(i)).value=shedno[i-1].trim();
+				document.getElementById("batch"+Number(i)).value=batch[i-1].trim();
+				document.getElementById("trid"+Number(i)).value=transId[i-1].trim();
+				if(i!=(farmerid.length-1))
+				{
+					LDC_AddRow('smart1',i,13,'',document.getElementById("batch"+i),2);
+				}	
+			}
+			
+			/*if(data[8]!="")
+			{
+				document.getElementById("last_mod_Div").style.display="block";
+				document.getElementById("modifiedLabel").innerHTML=data[8];
+				document.getElementById("LastModifiedTime").innerHTML=data[9];
+			}*/
+		}
+	};
+	hmlspaceperbird.open("get",url,false);
+	hmlspaceperbird.send(null);
+}
+
+if("getLDCDetails".equals(key))
+			{
+				String mainId=request.getParameter("mainid");
+				String transid="",lastDC_LastModifiedBy="",lastDC_LastModifiedTime="";
+				StringBuilder shedbuffer= new StringBuilder(),details=new StringBuilder();
+				PreparedStatement ps=con.prepareStatement("select branch_id from lastdc where dc_id='"+mainId+"'");
+				ResultSet rsstatic=ps.executeQuery();
+				if(rsstatic.next())
+				{
+					branch=rsstatic.getString("branch_id");
+				}
+				PreparedStatement ps1=con.prepareStatement("select dc_id,date_format(entry_date,'%d/%m/%Y') as entry_date from "
+						+ "lastdc where is_last_dc=1 and branch_id=if('"+branch+"'='HO',branch_id,'"+branch+"') and dc_id='"+mainId+"' order by dc_id");
+
+				ResultSet rsstatic1=ps1.executeQuery();
+				if(rsstatic1.next())
+				{
+					date=rsstatic1.getString("entry_date");
+				}
+
+
+				PreparedStatement pstmt=con.prepareStatement("select trans_id,farmer_id,shed_no,batch_no from "
+						+ "lastdcdetails where dc_id='"+mainId+"'");
+				rs=pstmt.executeQuery();
+				while(rs.next())
+				{
+					farmerId+=rs.getString("farmer_id")+"!@";
+					shedNo+=rs.getString("shed_no")+"!@";
+					batchNo+=rs.getString("batch_no")+"!@";
+					transid+=rs.getString("trans_id")+"!@";
+
+					//------------------ Modified by Ganesh Muluk on 16/03/2016 for Showing Last Modified By Employee Name and Date 
+					//lastDC_LastModifiedBy=rs1.getString("last_modified_by");
+					//lastDC_LastModifiedTime=rs1.getString("last_modif_date");
+					//------------------------------------------------------------------------------
+					/*-----------------get Shed list------------------------*/
+					StringBuilder tempshedbuffer= new StringBuilder();
+					shedbuffer.append("<select name='shed'><option value='-1'>--SELECT--</option>");
+					CallableStatement cs_shed=con.prepareCall("{call lastdc_getFarmers(?,?,?,?,?,?,?)}");
+					cs_shed.setString(1, "");
+					cs_shed.setString(2, date);
+					cs_shed.setString(3, rs.getString("farmer_id"));
+					cs_shed.setString(4, "0");
+					cs_shed.setString(5, mainId);
+					cs_shed.setInt(6,1);
+					cs_shed.setString(7,session.getAttribute("login_module_id").toString());
+					ResultSet rs_farmer=cs_shed.executeQuery();
+					while(rs_farmer.next())
+					{
+						tempshedbuffer.append("<option value='").append(rs_farmer.getString("shed_no")).append("'>").append(rs_farmer.getString("shed_name")).append("</option>");
+					}
+					tempshedbuffer.append("</select>");
+					shedbuffer.append(tempshedbuffer).append("!@");
+					shedbuffer.trimToSize();
+					/*--------------------------------------------------------*/
+				}
+				/*-----------------get farmer list------------------------*/
+				StringBuilder farmerbuffer= new StringBuilder();
+				farmerbuffer.append("<select name='farmer'><option value='-1'>--SELECT--</option>");
+				CallableStatement cs=con.prepareCall("{call lastdc_getFarmers(?,?,?,?,?,?,?)}");
+				cs.setString(1, branch);
+				cs.setString(2, date);
+				cs.setString(3, "");
+				cs.setString(4, "0");
+				cs.setString(5, mainId);
+				cs.setInt(6, 1);
+				cs.setString(7,session.getAttribute("login_module_id").toString());
+				ResultSet rs_farmer=cs.executeQuery();
+				while(rs_farmer.next())
+				{
+					farmerbuffer.append("<option value='").append(rs_farmer.getString("farmer_id")).append("'>").append(rs_farmer.getString("farmer")).append("</option>");
+				}
+
+				farmerbuffer.append("</select>");
+				farmerbuffer.trimToSize();
+				/*--------------------------------------------------------*/
+				details.append(farmerId).append(":@").append(shedNo).append(":@").append(batchNo).append(":@")
+				.append(transid).append(":@").append(farmerbuffer).append(":@").append(shedbuffer).append(":@")
+				.append(branch).append(":@").append(date);//.append(":@").append(lastDC_LastModifiedBy).append(":@").append(lastDC_LastModifiedTime)
+
+				out.println(details);
+			}
+
+dopost()
+{
+
+		DbConnection conn=new DbConnection(request);
+		Connection con=conn.connection;
+		HttpSession session=request.getSession();
+		String db_name=session.getAttribute("get_dbName").toString();
+		String branchId = "",alert_msg = "",img_path="",commit_status = "",invoice_number = "";
+		ArrayList<String> log_data = new ArrayList<String>(); //add by Mandar on 20-Feb-2016 For Modification logs
+		Savepoint save = null;
+		String btn=request.getParameter("btnval");
+		if(new Validate_Sess().CheckPermission(request,response,btn,page)==false){return;}
+		try
+		{
+			PrintWriter out=response.getWriter();
+			CallableStatement cstmt=null;
+			int Flag=0;
+			String farmer[]=null,shed[]=null,batch[]=null,trid[]=null;
+			String branch_Id=session.getAttribute("login_branch_id").toString();
+			String version=session.getAttribute("moduleVersion").toString();
+			String module_id=session.getAttribute("login_module_id").toString();
+
+			if("HO".equals(branch_Id) && "Premium".equals(version))
+			{
+				branchId=request.getParameter("model_branch_id");
+			}
+			else
+			{
+				branchId=branch_Id;
+			}
+			String loginid = String.valueOf(session.getAttribute("eid"));
+			String entryDate=request.getParameter("date");
+
+			farmer=request.getParameterValues("farmer");
+			shed=request.getParameterValues("shed");
+			batch=request.getParameterValues("batch");
+			trid=request.getParameterValues("trid");
+			String mainId=request.getParameter("mainId");
+			String DelTrid=request.getParameter("HidTrid");
+			if("CLEAR".equals(btn))
+			{
+				alert_msg="";
+				session.removeAttribute("search_daily_farmer");
+				session.removeAttribute("search_daily_shed_no");
+				session.removeAttribute("search_daily_batch_no");
+				session.removeAttribute("search_daily_date");
+				session.removeAttribute("BirdSale_LDCSubmit");
+			}else
+			{
+				// ---------------- Modified By Mandar on 16-July-2015 -----------------
+				GetData lock_obj = new GetData(request);
+				String checkDate = "",
+						form_name = request.getParameter("form_name");  // modified by Mandar on 23-Nov-2015 for checking form wise lock
+				boolean updateflag_clock = true;
+				int back_dated_lock_limit = 0,date_difference_no = 0; // Modified by Mandar on 02-June-2016 for checking back dated entries lock
+				if(btn.equals("UPDATE") || btn.equals("DELETE"))
+				{
+					checkDate = lock_obj.getDateById("select date_format(entry_date,'%d/%m/%Y') from lastdc where dc_id='"+
+							mainId+"'");
+					updateflag_clock = lock_obj.getLockSetting(checkDate,form_name);
+					date_difference_no = lock_obj.getCurrentDateLock(entryDate,checkDate,btn); // Modified by Mandar on 01-June-2016 for checking back dated entries lock
+				}else
+				{
+					date_difference_no = lock_obj.getCurrentDateLock(entryDate,"",""); // Modified by Mandar on 02-June-2016 for checking back dated entries lock
+				}
+				back_dated_lock_limit = lock_obj.getBackDatedLock(loginid, form_name, btn); // Modified by Mandar on 02-June-2016 for checking back dated entries lock
+
+				boolean flag_lock = lock_obj.getLockSetting(entryDate,form_name);
+				// ---------------------------------------------------
+				if(flag_lock == true && updateflag_clock == true)// Modified By Mandar on 16-July-2015
+				{
+					//if(date_difference_no <= back_dated_lock_limit || (back_dated_lock_limit-1)==0) // Commented on 07/01/2017 case id 20412
+					if(date_difference_no <= back_dated_lock_limit || (back_dated_lock_limit==-1))// Modified by Mandar on 06-June-2016 for checking back dated entries lock//Added By Madhuri Kad on 31-08-2016 for allowing backdated value of 0 so datediff gets 0
+					{
+						// ---------------- Modified By Mandar on 16-July-2015 -----------------
+						switch (btn) 
+						{
+						case "SUBMIT":
+							session.setAttribute("BirdSale_LDCSubmit", "submit");
+							con.setAutoCommit(false);
+							save=con.setSavepoint();
+							CallableStatement css = con.prepareCall("{call validateFinancialDate(?,?,?)}"); 
+
+							css.setString(1, entryDate);
+							css.registerOutParameter(2, java.sql.Types.INTEGER);
+							css.registerOutParameter(3, java.sql.Types.INTEGER);
+							css.execute();
+							int status3= css.getInt(2); //Flag For Financial Date
+							int status4= css.getInt(3);//Flag For Entered Date Should Be less than Equal To Current Date
+							if(status3 == 1 && status4 == 1)
+							{
+
+								cstmt=con.prepareCall("{call lastdc_insert(?,?,?,?,?,?)}");
+								cstmt.setString(1,branchId);
+								cstmt.setString(2, entryDate);
+								cstmt.setString(3,loginid);
+								cstmt.setInt(4,1);
+								cstmt.registerOutParameter(5, java.sql.Types.INTEGER);
+								cstmt.setString(6,module_id);
+								log_data.add(cstmt.toString());// Modified By Mandar on 20-Feb-2016 for modification logs
+								cstmt.execute();
+								int Flag2=cstmt.getInt(5);
+
+								for(int i=0;i<farmer.length;i++)
+								{
+									cstmt=con.prepareCall("{call lastdcdetails_insert(?,?,?,?,?,?)}");
+									cstmt.setInt(1,Flag2);
+									cstmt.setString(2,farmer[i]);
+									cstmt.setString(3,shed[i]);
+									cstmt.setString(4,batch[i]);
+									cstmt.setInt(5,1);
+									cstmt.registerOutParameter(6, java.sql.Types.INTEGER);
+									log_data.add(cstmt.toString());
+									cstmt.execute();
+
+									int Flag1=cstmt.getInt(6);
+									Flag=Flag+Flag1;
+								}
+
+
+								con.commit();
+								img_path="/images/greenTick.jpg";
+								alert_msg = "Data Submitted Successfully...!"; // Modified By Mandar on 10-June-2015
+								commit_status = "Successful";
+								try 
+								{
+									/*----------------- Checking SMS limit to send SMS -------------------------*/ 
+									Smsurl sURL = new Smsurl();
+									SMS1 sms = new SMS1(request);
+									CBFSMS newSms = new CBFSMS();
+									int totalSentSMS = sURL.getSmsCounter(con,request); //Getting SMS counter
+									if(Integer.parseInt(String.valueOf(session.getAttribute("smsLimit")).equals("null")?"0":session.getAttribute("smsLimit").toString()) > totalSentSMS)
+									{
+										newSms.bird_salelstDC(request, branchId,  entryDate, loginid, con);
+									}
+									/*---------------------------------------------------------------------------*/ 
+								}
+								catch (Exception e)
+								{
+									System.out.println("Error in SMS Bird Sale Last DC ("+request.getSession().getAttribute("get_dbName")+")= "+e.getMessage());
+								}
+
+							}
+							else
+							{
+								con.rollback(save);
+								img_path="/images/warningImage.png";
+								alert_msg = "Invalid Date...!"; // Modified By Mandar on 10-June-2015
+							}
+							break;
+
+						case "UPDATE":
+							session.setAttribute("BirdSale_LDCSubmit", "submit");
+							con.setAutoCommit(false);
+							save=con.setSavepoint();
+							CallableStatement cs=con.prepareCall("{call lastdc_update(?,?,?,?,?,?)}");
+							cs.setInt(1, Integer.parseInt(mainId));
+							cs.setString(2, branchId);
+							cs.setString(3, entryDate);
+							cs.setString(4, session.getAttribute("eid").toString());
+							cs.registerOutParameter(5, java.sql.Types.INTEGER);
+							cs.setString(6, module_id);
+							log_data.add(cs.toString());// Modified By Mandar on 20-Feb-2016 for modification logs
+							cs.execute();
+							int up_flag=cs.getInt(5);
+							for(int i=0;i<farmer.length;i++)
+							{
+								cstmt=con.prepareCall("{call lastdcdetails_update(?,?,?,?,?,?,?)}");
+								cstmt.setInt(1,Integer.parseInt(mainId));
+								cstmt.setString(2,"".equals(trid[i])?"0":trid[i]);
+								cstmt.setString(3,farmer[i]);
+								cstmt.setString(4,shed[i]);
+								cstmt.setString(5,batch[i]);
+								cstmt.setInt(6,1);
+								cstmt.registerOutParameter(7, java.sql.Types.INTEGER);
+								log_data.add(cstmt.toString());// Modified By Mandar on 20-Feb-2016 for modification logs
+								cstmt.execute();
+								int Flag1=cstmt.getInt(7);
+								Flag=Flag+Flag1;
+							}
+
+							if(!DelTrid.trim().equals(""))
+							{
+								String DelTrid1[]=DelTrid.split(":");
+								for(int i=0;i<DelTrid1.length;i++)
+								{
+									CallableStatement cstmt1=con.prepareCall("{call lastdcdetails_delete(?,?)}");
+									cstmt1.setString(1,"".equals(DelTrid1[i])?"0":DelTrid1[i]);
+									cstmt1.registerOutParameter(2, java.sql.Types.INTEGER);
+									log_data.add(cstmt1.toString());// Modified By Mandar on 20-Feb-2016 for modification logs
+									cstmt1.execute();
+									Flag+=cstmt1.getInt(2);
+								}
+							}
+
+							if(Flag==0)
+							{
+								/*PreparedStatement ps_up=con.prepareStatement("update lastdc set branch_id='"+branchId+"',"
+										+ "entry_date=str_to_date('"+entryDate+"','%d/%m/%Y'),last_modified_by='"+loginid+"' "
+										+ "where dc_id='"+mainId+"'");
+								log_data.add(ps_up.toString());// Modified By Mandar on 20-Feb-2016 for modification logs
+								ps_up.execute();*/
+
+
+								con.commit();
+								img_path="/images/greenTick.jpg";
+								alert_msg = "Data Updated Successfully...!"; // Modified By Mandar on 10-June-2015
+								commit_status = "Successful";
+
+								/*CallableStatement cs=con.prepareCall("{call update_lastdc(?,?,?,?,?)}");
+								cs.setInt(1, Integer.parseInt(mainId));
+								cs.setString(2, branchId);
+								cs.setString(3, entryDate);
+								cs.setString(4, session.getAttribute("eid").toString());
+								cs.registerOutParameter(5, java.sql.Types.INTEGER);
+								cs.execute();
+								int up_flag=cs.getInt(5);
+
+								if(up_flag==1)
+								{
+									img_path="/images/greenTick.jpg";
+									alert_msg = "Data Updated Successfully...!"; // Modified By Mandar on 10-June-2015
+									commit_status = "Successful";
+								}
+								if(up_flag==0)
+								{
+									img_path="/images/redAlert.png";
+									alert_msg = "Data Updation Failed...!"; // Modified By Mandar on 10-June-2015
+									commit_status = "Failed";
+								}*/
+
+
+							}
+							else
+							{
+								con.commit();
+								img_path="/images/greenTick.jpg";
+								alert_msg = "Data Updated Partially...!"; // Modified By Mandar on 10-June-2015
+								commit_status = "Successful";
+							}
+
+							break;
+						case "DELETE":
+
+							session.setAttribute("BirdSale_LDCSubmit", "submit");
+							cstmt=con.prepareCall("{call lastdc_delete(?,?)}");
+							cstmt.setString(1,mainId);
+							cstmt.registerOutParameter(2,java.sql.Types.INTEGER);
+							log_data.add(cstmt.toString());// Modified By Mandar on 20-Feb-2016 for modification logs
+							cstmt.execute();
+							Flag=cstmt.getInt(2);
+							if(Flag==1)
+							{
+								img_path="/images/greenTick.jpg";
+								alert_msg = "Data Deleted Successfully...!"; // Modified By Mandar on 10-June-2015
+								commit_status = "Successful";
+							}
+							else
+							{
+								img_path="/images/redAlert.png";
+								alert_msg = "Deletion Failed...!"; // Modified By Mandar on 10-June-2015
+								commit_status = "Failed";
+							}
+							break;
+						default:
+							break;
+						}
+					}else
+					{
+						alert_msg = "Back Dated Entry is Locked...!";// Modified By Mandar on 02-June-2016
+					}
+				}else
+				{
+					alert_msg = "This Period is Locked...!";// Modified By Mandar on 16-July-2015
+				}	
+			}
+			if("".equals(alert_msg))
+			{
+				response.sendRedirect(page);
+				return;
+			}else
+			{
+				out.println("<html>");
+				out.println("<head>");
+				out.println("<title>POLOXY</title>");            
+				out.println("</head>");
+				out.println("<body bgcolor=\"Black\">");
+				out.println("<form name='alert_form' method='post' action='AlertForward'>");
+				out.println("<input type='hidden' name='image_path' value='"+img_path+"'>");
+				out.println("<input type='hidden' name='alert_msg' value='"+alert_msg+"'>");
+				out.println("<input type='hidden' name='url_jsp' value='"+page+"'>");
+				out.println("<input type='hidden' name='optional_page' value=''>");
+				out.println("<input type='hidden' name='submit_session' value='BirdSale_LDCSubmit'>");
+				out.println("</form>");
+				out.println("</body>");
+				out.println("<SCRIPT LANGUAGE=javascript>");
+				out.println("<!--");
+				out.println("function window_onload() { document.alert_form.submit();} ");
+				out.println("//-->");
+				out.println("window_onload();");
+				out.println("</SCRIPT>");
+				out.println("</html>");
+			}
+			// -----------------------------------------------------
+		}
+		catch (Exception e) 
+		{
+			commit_status = "Failed";
+			session.removeAttribute("BirdSale_LDCSubmit");
+			System.out.println("Error in BirdSale_LastDc (Post) ("+request.getSession().getAttribute("get_dbName")+")="+e.getMessage());
+			try {
+				if(save!=null)con.rollback(save);
+			} catch (SQLException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		}
+
+		finally
+		{
+			try
+			{
+				if(!"".equals(commit_status)) // Modified By Mandar on 20-Feb-2016
+				{
+					conn.maintain_log("Bird Sale Last DC", btn, "CBF", log_data, commit_status, invoice_number, 
+							invoice_number, request, con); // Call log_maintain method to store log in file.
+					if(con.getAutoCommit() == false)
+					{
+						con.commit();	
+					}
+
+				}
+				if(con!=null)
+				{
+					if(con.isClosed()==false)
+					{
+						con.close();//Connection closed.
+					}
+				}
+			}
+			catch (Exception e)
+			{
+				session.removeAttribute("BirdSale_LDCSubmit");
+				System.out.println("Error in BirdSale Last DC ("+request.getSession().getAttribute("get_dbName")+")== "+e.getMessage());
+			}
+		}
+	
+}			
+<input type="hidden" id="button" name="button" value="">
+<button disabled type="button" class="button_img_save" name="b1"
+	id="ins" value="SUBMIT" title="Click to Insert New Record"
+	onclick="return validation(this.value);" tabindex="2">SUBMIT</button>
+<button disabled type="button" class="button_img_save" name="b1"
+	id="clear" value="CLEAR" title="Click to Reset Form" onclick="return validation(this.value);"
+	 tabindex="3">CLEAR</button><!-- onclick="window.location.reload('true');"  -->
+<button disabled type="button" class="button_img_save" name="b1"
+	id="upd" value="UPDATE" title="Click to Update Record"
+	onclick="return validation(this.value);" tabindex="4">UPDATE</button>
+<button disabled type="button" class="button_img_save" name="b1"
+	id="del" value="DELETE" title="Click to Delete Record"
+	onclick="return validation(this.value);" tabindex="5">DELETE</button>
+	
+	//------------------------- validate whole form ----------------------
+function validation(val)
+{
+	//alert(val);
+	document.getElementById('button').value=val;    
+	var coun_name= document.getElementById("coun_name");    	 
+	var checkid=document.getElementById('checked').value;     	
+	if(val!="CLEAR")
+	{
+		if (coun_name.value.trim() == "")
+		{
+			setTimeout(function(){alert("Please Enter Country");},1);
+			setTimeout(function(){coun_name.focus();},1);
+			return false;
+		}
+	}
+
+
+	var confirmMsg=true;
+	if((/SUBMIT/g).test(val))
+	{
+		//alert(checkid);
+		if(checkid=="" || checkid=='null')
+		{
+			confirmMsg=confirm("Are You Sure To Submit ?"); 
+		}
+		else
+		{
+			setTimeout(function(){alert("Record Already Exist..!");},1);
+			return false;
+		}
+	}
+
+	else if((/UPDATE/g).test(val))
+	{	
+		if(checkid!='null')
+		{
+			confirmMsg=confirm("Are You Sure To Update ?");
+		}
+		else
+		{
+			setTimeout(function(){alert("Please Select Record");},1);
+			return false;
+		}
+	}
+
+	else if((/DELETE/g).test(val))
+	{	
+		//alert(checkid);
+		if(checkid!='null')
+		{		
+			confirmMsg=confirm("Are You Sure To Delete ?");		 
+		}
+		else
+		{
+			setTimeout(function(){alert("Please Select Record");},1);
+			return false;
+		}
+	}	
+	else if((/CLEAR/g).test(val))           // Added By Shubham Kathawate on 24-08-2017
+	{
+		confirmMsg=confirm("Are You Sure To Clear ?");		 
+	}
+
+	if(confirmMsg==true)
+	{	
+		document.frm1.submit();
+		return true;	
+	}
+	else
+	{
+		return false;
+	}	     
+}   
